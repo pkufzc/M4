@@ -10,7 +10,7 @@
 CXX = g++
 CXXFLAGS = -g -Wall -O2 -std=c++17 -lm
 
-all: tdigest mreq dd
+all: tdigest mreq dd ddc
 
 tdigest:
 	rm -f tdigest
@@ -24,7 +24,11 @@ dd:
 	rm -f dd
 	$(CXX) $(CXXFLAGS) -D TEST_DD main.cpp -o dd
 
-clean:
-	rm -f tdigest mreq dd
+ddc:
+	rm -f ddc
+	$(CXX) $(CXXFLAGS) -D TEST_DDC main.cpp -o ddc
 
-.PHONY: all tdigest mreq dd clean
+clean:
+	rm -f tdigest mreq dd ddc
+
+.PHONY: all tdigest mreq dd ddc clean

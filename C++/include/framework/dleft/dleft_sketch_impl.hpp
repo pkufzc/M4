@@ -6,8 +6,9 @@
 
 namespace sketch {
     template <typename META>
-    DLeftSketch<META>::DLeftSketch(u64 mem_limit, u32 seed) {
-        dft = createMeta(UINT32_MAX, alpha, cmtor_cap, td_cap);
+    DLeftSketch<META>::DLeftSketch(u64 mem_limit, u32 seed, double ddc_alpha) {
+        ddcAlpha = ddc_alpha;
+        dft = createMeta(UINT32_MAX, alpha, cmtor_cap, td_cap, ddc_alpha);
         u32 bucket_num = mem_limit / (dft.memory() + sizeof(u32)) / HASH_NUM;
         for (u32 i = 0; i < HASH_NUM; ++i) {
             buckets[i] = vector<META>(bucket_num);
@@ -18,13 +19,13 @@ namespace sketch {
             hash[i].initialize(seed + i);
         }
 
-        dft = createMeta(UINT32_MAX, 0.5, 2, 4);
+        dft = createMeta(UINT32_MAX, 0.5, 2, 4, ddc_alpha);
     }
 
     template <typename META>
     void DLeftSketch<META>::evict(u32 bucket_id, u32 pos) {
         auto& sketch = buckets[bucket_id][pos];
-        sketch = createMeta(UINT32_MAX, alpha, cmtor_cap, td_cap);
+        sketch = createMeta(UINT32_MAX, alpha, cmtor_cap, td_cap, ddcAlpha);
         ids[bucket_id][pos] = UINT32_MAX;
     }
 

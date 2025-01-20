@@ -16,11 +16,14 @@ namespace sketch {
     using u32 = uint32_t;
     using u64 = uint64_t;
     using f64 = double;
+    using pair32 = std::pair<u8, u32>;
     using vec_f64 = vector<f64>;
     using vec_u32 = vector<u32>;
+    using vec_pair = vector<pair32 >;
     using u32_const_iter = vec_u32::const_iterator;
     using u32_iter = vec_u32::iterator;
 
+#undef HUGE
 #define UNUSED(x) (void(x))
 
     enum FlowType {
@@ -48,6 +51,7 @@ namespace sketch {
         DD,
         MREQ,
         TD,
+        DDC,
         NUM_METAS,
     };
 }   // namespace sketch

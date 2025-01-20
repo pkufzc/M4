@@ -9,10 +9,11 @@ namespace sketch {
     template <typename META>
     SketchSingleTest<META>::SketchSingleTest(u64 mem_limit, u32 hash_num,
                                              u32 seed,
-                                             const vector<FlowItem>& dataset) {
-        models[ANDOR] = new AndorSketch<META>(mem_limit, hash_num, seed);
-        models[DLEFT] = new DLeftSketch<META>(mem_limit, seed);
-        models[CUCKOO] = new Cuckoo<META>(mem_limit, seed);
+                                             const vector<FlowItem>& dataset,
+                                             double ddc_alpha) {
+        models[ANDOR] = new AndorSketch<META>(mem_limit, hash_num, seed, ddc_alpha);
+        models[DLEFT] = new DLeftSketch<META>(mem_limit, seed, ddc_alpha);
+        models[CUCKOO] = new Cuckoo<META>(mem_limit, seed, ddc_alpha);
         
         // append all items to real
         for (auto [id, value] : dataset) {
@@ -36,10 +37,10 @@ namespace sketch {
 
     template <typename META>
     SketchSingleTest<META>::~SketchSingleTest() {
-            delete models[ANDOR];
-            delete models[DLEFT];
-            delete models[CUCKOO];
-        }
+        delete models[ANDOR];
+        delete models[DLEFT];
+        delete models[CUCKOO];
+    }
 
     template <typename META>
     FlowType SketchSingleTest<META>::getType(u32 id) const {
@@ -69,6 +70,36 @@ namespace sketch {
                 continue;
             }
             error += FlowAPE(models[model], id);
+            ++flow_cnt;
+        }
+        return error / flow_cnt;
+    }
+
+    // 新增：计算 AAE（平均绝对误差）
+    template <typename META>
+    f64 SketchSingleTest<META>::AAE(u32 model, u32 type) const {
+        u32 flow_cnt = 0;
+        f64 error = 0;
+        for (u32 id : id_list) {
+            if ((getType(id) & type) == 0) {
+                continue;
+            }
+            error += FlowAAE(models[model], id);
+            ++flow_cnt;
+        }
+        return error / flow_cnt;
+    }
+
+    // 新增：计算 ARE（平均相对误差）
+    template <typename META>
+    f64 SketchSingleTest<META>::ARE(u32 model, u32 type) const {
+        u32 flow_cnt = 0;
+        f64 error = 0;
+        for (u32 id : id_list) {
+            if ((getType(id) & type) == 0) {
+                continue;
+            }
+            error += FlowARE(models[model], id);
             ++flow_cnt;
         }
         return error / flow_cnt;
@@ -119,12 +150,31 @@ namespace sketch {
         return std::fabs(nom_rank - given_p);
     }
 
+    // 新增：计算单个流的 AAE（绝对误差）
+    template <typename META>
+    f64 SketchSingleTest<META>::FlowAAE(const Framework* sketch, u32 id) const {
+        f64 quan = sketch->quantile(id, given_p);
+        f64 quan_real = real.quantile(id, given_p);
+        return std::fabs(quan - quan_real);
+    }
+
+    // 新增：计算单个流的 ARE（相对误差）
+    template <typename META>
+    f64 SketchSingleTest<META>::FlowARE(const Framework* sketch, u32 id) const {
+        f64 quan = sketch->quantile(id, given_p);
+        f64 quan_real = real.quantile(id, given_p);
+        if (quan_real == 0) {
+            return 0; // 避免除以零
+        }
+        return std::fabs((quan - quan_real) / quan_real);
+    }
+
     template <typename META>
     SketchTest<META>::SketchTest(u64 mem_limit_, u32 hash_num_, u32 seed_,
                          const string& dataset_name_,
-                         u32 repeat_)
+                         u32 repeat_, double ddc_alpha_)
         : mem_limit(mem_limit_), hash_num(hash_num_), seed(seed_), 
-          dataset(dataset_name_), repeat(repeat_) { }
+          dataset(dataset_name_), repeat(repeat_), ddc_alpha(ddc_alpha_) { }
 
     template <typename META>
     void SketchTest<META>::run() {
@@ -135,7 +185,7 @@ namespace sketch {
         for (u32 i = 0; i < repeat; ++i) {
             cout << "Running test " << i << "..." << endl;
             SketchSingleTest<META> test(mem_limit, hash_num,
-                                        seed, dataset_loaded);
+                                        seed, dataset_loaded, ddc_alpha);
             cout << "Calculating metrics..." << endl;
             addMetrics(test);
         }
@@ -147,11 +197,10 @@ namespace sketch {
     template <typename META>
     void SketchTest<META>::addMetrics(const SketchSingleTest<META>& test) {
         for (u32 i = 0; i < NUM_MODELS; ++i) {
-            // if (i == ANDOR) {
-            //     continue;
-            // }
             m_ALE[i] += test.ALE(i, MID | HUGE);
             m_APE[i] += test.APE(i, MID | HUGE);
+            m_AAE[i] += test.AAE(i, MID | HUGE); // 新增：累加 AAE
+            m_ARE[i] += test.ARE(i, MID | HUGE); // 新增：累加 ARE
             m_appendTp[i] += test.appendTp(i);
             m_queryTp[i] += test.queryTp(i);
         }
@@ -162,6 +211,8 @@ namespace sketch {
         for (i32 i = 0; i < NUM_MODELS; ++i) {
             m_ALE[i] /= repeat;
             m_APE[i] /= repeat;
+            m_AAE[i] /= repeat; // 新增：计算平均 AAE
+            m_ARE[i] /= repeat; // 新增：计算平均 ARE
             m_appendTp[i] /= repeat;
             m_queryTp[i] /= repeat;
         }
@@ -175,6 +226,18 @@ namespace sketch {
     template <typename META>
     f64 SketchTest<META>::APE(u32 model) const {
         return m_APE[model];
+    }
+
+    // 新增：获取 AAE
+    template <typename META>
+    f64 SketchTest<META>::AAE(u32 model) const {
+        return m_AAE[model];
+    }
+
+    // 新增：获取 ARE
+    template <typename META>
+    f64 SketchTest<META>::ARE(u32 model) const {
+        return m_ARE[model];
     }
 
     template <typename META>

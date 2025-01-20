@@ -8,12 +8,12 @@
 
 namespace sketch {
     template <typename META>
-    AndorSketch<META>::AndorSketch(u64 mem_limit, u32 hash_num, u32 seed) {
+    AndorSketch<META>::AndorSketch(u64 mem_limit, u32 hash_num, u32 seed, double ddc_alpha) {
         // calculate bucket number per level
         TinyCnter tmp_lv0;
         META tmp[4];
         for (u32 i = 1; i < 4; ++i) {
-            tmp[i] = createMeta(cap[i], alpha[i], cmtor_cap[i], td_cap[i]);
+            tmp[i] = createMeta(cap[i], alpha[i], cmtor_cap[i], td_cap[i], ddc_alpha);
         }
 
         u32 bucket_num[LEVELS];

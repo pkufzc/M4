@@ -18,7 +18,7 @@ namespace sketch {
         /// @param mem_limit Memory limit in bytes.
         /// @param hash_num Number of hash functions per level, by default 2.
         /// @param seed Seed for generating hash functions, by default 0.
-        AndorSketch(u64 mem_limit, u32 hash_num = 2, u32 seed = 0);
+        AndorSketch(u64 mem_limit, u32 hash_num = 2, u32 seed = 0, double ddc_alpha = 0.1);
 
         void append(u32 id, u32 value) override;
         u32 size(u32 id) const override;
@@ -35,7 +35,8 @@ namespace sketch {
         static constexpr u32 cmtor_cap[4] = {0, 2, 2, 4};
         static constexpr u32 td_cap[4] = {0, 4, 8, 16};
         static constexpr f64 mem_div[4] = {0.03, 0.60, 0.35, 0.02};
-
+        static constexpr u32 ddc_size[4] = {0, 20, 20, 35};
+        
         vec_tiny lv0;   ///< Level 0.
         vec_meta lv1;   ///< Level 1.
         vec_meta lv2;   ///< Level 2.

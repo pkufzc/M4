@@ -18,6 +18,9 @@ using namespace sketch;
 #elif defined(TEST_DD)
 #define METATYPE DDSketch
 #define metaname "dd"
+#elif defined(TEST_DDC)
+#define METATYPE DDCSketch
+#define metaname "ddc"
 #endif
 
 void print_usage(char* file) {
@@ -40,13 +43,14 @@ struct main_args {
     u32 hash_num;
     u32 repeat;
     u32 seed;
+    double ddc_alpha;
 };
 
 main_args parse_args(int argc, char* argv[]) {
     main_args args;
     args.valid = false;
 
-    if (argc != 5 && argc != 6) {
+    if (argc != 5 && argc != 6 && argc != 7) {
         return args;
     }
 
@@ -66,9 +70,14 @@ main_args parse_args(int argc, char* argv[]) {
     args.repeat = stoul(argv[4]);
 
     args.seed = 0;
-    if (argc == 6) {
+    args.ddc_alpha = 0.1;
+    if (argc >= 6) {
         args.seed = stoul(argv[5]);
     }
+    if (argc == 7) {
+        args.ddc_alpha = stod(argv[6]);
+    }
+
 
     args.valid = true;
     return args;
@@ -94,6 +103,13 @@ void output_res(const main_args& args, const SketchTest<METATYPE>& test) {
     out << "APE of andor: " << test.APE(ANDOR) << endl;
     out << "APE of dleft: " << test.APE(DLEFT) << endl;
     out << "APE of cuckoo: " << test.APE(CUCKOO) << endl;
+    out << "AAE of andor: " << test.AAE(ANDOR) << endl;
+    out << "AAE of dleft: " << test.AAE(DLEFT) << endl;
+    out << "AAE of cuckoo: " << test.AAE(CUCKOO) << endl;
+    out << "ARE of andor: " << test.ARE(ANDOR) << endl;
+    out << "ARE of dleft: " << test.ARE(DLEFT) << endl;
+    out << "ARE of cuckoo: " << test.ARE(CUCKOO) << endl;
+
     out << "AppendTp of andor: " << test.appendTp(ANDOR) << " Mops" << endl;
     out << "AppendTp of dleft: " << test.appendTp(DLEFT) << " Mops" << endl;
     out << "AppendTp of cuckoo: " << test.appendTp(CUCKOO) << " Mops" << endl;
@@ -111,7 +127,7 @@ int main(int argc, char* argv[]) {
     }
 
     SketchTest<METATYPE> test(args.memory, args.hash_num, args.seed, 
-                   args.dataset, args.repeat);
+                   args.dataset, args.repeat, args.ddc_alpha);
 
     test.run();
 

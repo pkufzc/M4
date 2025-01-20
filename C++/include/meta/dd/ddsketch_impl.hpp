@@ -38,12 +38,18 @@ namespace sketch {
     }
 
     u32 DDSketch::pos(u32 item) const {
-        return std::ceil(std::log2(item) / std::log2(gamma));
+        u32 tmp = std::ceil(std::log2(item) / std::log2(gamma));
+        u32 maxp = counters.size() - 1;
+        return std::min(tmp, maxp);
     }
 
     void DDSketch::append(u32 item) {
         u32 idx = pos(item);
+        if (idx >= counters.size()) {
+            cout << idx << endl;
+        }
         if (counters[idx] >= cap) {
+            cout << item << ' ' << cap << ' ' << counters[idx]<< endl;
             throw std::runtime_error("append to a full DDSketch");
         }
         append(item, idx);

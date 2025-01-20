@@ -5,17 +5,17 @@
 
 namespace sketch {
     template <typename META>
-    Cuckoo<META>::Cuckoo(u64 mem_limit, u32 seed) {
+    Cuckoo<META>::Cuckoo(u64 mem_limit, u32 seed, double ddc_alpha) {
         rand_u32_generator gen(seed, MAX_PRIME32 - 1);
         for (u32 i = 0; i < HASH_NUM; ++i) {
             h[i].initialize(gen());
         }
 
-        META meta = createMeta(UINT32_MAX, alpha, cmtor_cap, td_cap);
+        META meta = createMeta(UINT32_MAX, alpha, cmtor_cap, td_cap, ddc_alpha);
         Cell cell{UINT32_MAX, meta};
         u32 num = mem_limit / cell.memory();
         buckets = std::vector<Cell>(num, cell);
-        dft = createMeta(UINT32_MAX, 0.5, 2, 4);
+        dft = createMeta(UINT32_MAX, 0.5, 2, 4, ddc_alpha);
     }
 
     template <typename META>
